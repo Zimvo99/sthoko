@@ -1,0 +1,508 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sthokozile Mzotho - Portfolio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: #F8EDE3;
+      color: #1A3C34;
+      line-height: 1.6;
+    }
+
+    nav {
+      background-color: #1A3C34;
+      padding: 1.5rem;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      gap: 2.5rem;
+    }
+
+    nav a {
+      color: #F8EDE3;
+      text-decoration: none;
+      font-size: 1.1rem;
+      font-weight: 400;
+      transition: color 0.3s ease, transform 0.3s ease;
+    }
+
+    nav a:hover {
+      color: #FF6B6B;
+      transform: translateY(-2px);
+    }
+
+    .hamburger {
+      display: none;
+      font-size: 1.8rem;
+      color: #F8EDE3;
+      cursor: pointer;
+      position: absolute;
+      right: 1.5rem;
+      top: 1.5rem;
+    }
+
+    section {
+      padding: 6rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    #home {
+      background: linear-gradient(rgba(26, 60, 52, 0.7), rgba(26, 60, 52, 0.7)), url('https://images.unsplash.com/photo-1516321318423-8b21e27a420a');
+      background-size: cover;
+      background-position: center;
+      color: #F8EDE3;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    #home h1 {
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    #home p {
+      font-size: 1.3rem;
+      max-width: 700px;
+      margin-bottom: 2rem;
+    }
+
+    .cv-button {
+      background-color: #FF6B6B;
+      color: #F8EDE3;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .cv-button:hover {
+      background-color: #D4A017;
+      transform: scale(1.05);
+    }
+
+    #about {
+      background-color: #FFF;
+      border-radius: 15px;
+      margin: 2rem auto;
+      padding: 4rem 2rem;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    #about img {
+      border-radius: 50%;
+      width: 220px;
+      height: 220px;
+      object-fit: cover;
+      margin: 1.5rem auto;
+      border: 4px solid #FF6B6B;
+    }
+
+    #about p {
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 1.1rem;
+      color: #1A3C34;
+    }
+
+    .skills-grid, .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      margin-top: 2.5rem;
+    }
+
+    .skill-card, .project-card {
+      background: #FFF;
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .skill-card:hover, .project-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .skill-card {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1A3C34;
+      background: linear-gradient(135deg, #F8EDE3 0%, #FFE6D9 100%);
+    }
+
+    .project-card img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      border: 2px solid #D4A017;
+    }
+
+    .project-card h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #1A3C34;
+    }
+
+    .project-card p {
+      font-size: 1rem;
+      color: #555;
+    }
+
+    .project-card a {
+      display: inline-block;
+      margin-top: 1rem;
+      color: #FF6B6B;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+    .project-card a:hover {
+      color: #D4A017;
+    }
+
+    #contact {
+      background-color: #1A3C34;
+      color: #F8EDE3;
+      border-radius: 15px;
+      padding: 4rem 2rem;
+    }
+
+    #contact form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      max-width: 600px;
+      margin: 2rem auto;
+    }
+
+    #contact input, #contact textarea {
+      padding: 1rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      background-color: #F8EDE3;
+      color: #1A3C34;
+      resize: vertical;
+    }
+
+    #contact input::placeholder, #contact textarea::placeholder {
+      color: #888;
+    }
+
+    #contact button {
+      background-color: #FF6B6B;
+      color: #F8EDE3;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    #contact button:hover {
+      background-color: #D4A017;
+      transform: scale(1.05);
+    }
+
+    footer {
+      background-color: #1A3C34;
+      color: #F8EDE3;
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    h2 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      color: #1A3C34;
+    }
+
+    #contact h2 {
+      color: #F8EDE3;
+    }
+
+    @media (max-width: 768px) {
+      nav ul {
+        display: none;
+        flex-direction: column;
+        background-color: #1A3C34;
+        position: absolute;
+        top: 70px;
+        left: 0;
+        width: 100%;
+        padding: 1rem 0;
+      }
+
+      nav ul.active {
+        display: flex;
+      }
+
+      .hamburger {
+        display: block;
+      }
+
+      #home h1 {
+        font-size: 2.5rem;
+      }
+
+      #home p {
+        font-size: 1.1rem;
+      }
+
+      .skills-grid, .projects-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <ul id="nav-links">
+      <li><a href="#home">Home</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="hamburger">☰</div>
+  </nav>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sthokozile Mzotho - Data Analyst Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .button-container a {
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+        .button-container a:hover {
+            transform: scale(1.05);
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #3b82f6, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <section id="home" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-gray-200">
+        <div class="text-center max-w-3xl mx-auto px-4">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 gradient-text">
+                Welcome to My Portfolio
+            </h1>
+            <p class="text-lg md:text-xl text-gray-700 mb-6">
+                Hi, I'm <span class="font-semibold">Sthokozile Mzotho</span>, a passionate Data Analyst and Designer crafting impactful data-driven insights and visual experiences.
+            </p>
+            <div class="button-container flex flex-col sm:flex-row justify-center gap-4">
+                <a href="img/cv12.pdf" download 
+                   class="cv-button bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700">
+                    Download My CV
+                </a>
+                <a href="https://www.canva.com/design/DAGhs9wNPRg/Qn-nUdFDn0OgnHkhDf043Q/edit" target="_blank" 
+                   class="certification-button bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-green-700">
+                    View My Certification
+                </a>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
+
+  <section id="about">
+    <h2>About Me</h2>
+    <img src="img/photo1.jpg" alt="Sthokozile Mzotho">
+    <p>Hi, I am Sithokozile Faith Mzotho, a 30-year-old IT professional with a National Diploma in Information Technology, specializing in Business Applications. I am a dedicated, self-driven, and outgoing self-starter with a unique combination of skills acquired during my studies. As a proactive and self-disciplined candidate, I have high aspirations in Information Technology, with a focus on data analysis and design. My passion lies in creating visually compelling solutions that drive business success.</p>
+  </section>
+
+  <section id="skills">
+    <h2>My Skills</h2>
+    <div class="skills-grid">
+      <div class="skill-card">Data collection</div>
+      <div class="skill-card">Data cleaning</div>
+      <div class="skill-card">Data analyisng </div>
+      <div class="skill-card">SQL</div>
+      <div class="skill-card">Microsoft </div>
+      <div class="skill-card">Data visualisation</div>
+      <div class="skill-card">Data formatting</div>
+      <div class="skill-card">Team collaborations</div>
+    </div>
+  </section>
+
+  <section id="projects">
+    <h2>My Projects</h2>
+      <div class="project-card">
+        <img src="img/OIP.webp" alt="AI Chatbot">
+        <h3> AI Chatbort</h3>
+        <p>Designed a user-friendly Chatbot</p>
+        <a href="https://landbot.online/v3/H-2753638-B4BQTGP0SRYMI2CO/index.html">View</a>
+      </div>
+      <div class="project-card">
+        <img src="img/AdobeStock_600314909.jpeg" alt="Data analyisng">
+        <h3></h3>
+        <p>Created a series.</p>
+        <a href="https://capeitinitiative.sharepoint.com/:u:/s/DataTransformers/EcgIg2DApjhGqHmnLyXnT_YBNP1pEQWd3dBa7K_rlzEzCA?e=TdaPvb">View</a>
+    </div>
+  </section>
+
+<section id="contact" class="py-16 bg-gray-100">
+  <div class="container mx-auto px-4">
+    <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Get in Touch</h2>
+    <div class="flex flex-col md:flex-row gap-8">
+      <!-- Contact Info -->
+      <div class="md:w-1/2 bg-white p-6 rounded-lg shadow-md">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Contact Information</h3>
+        <div class="space-y-4 text-gray-600">
+          <p>
+            <i class="fab fa-linkedin text-blue-600 mr-2"></i>
+            <a href="https://www.linkedin.com/in/sithokozile-mzotho-234792288" target="_blank" class="hover:text-blue-600 transition-colors">LinkedIn Profile</a>
+          </p>
+          <p>
+            <i class="fab fa-whatsapp text-green-500 mr-2"></i>
+            <a href="https://wa.me/2766697925" target="_blank" class="hover:text-green-500 transition-colors">0766697925</a>
+          </p>
+          <p>
+            <i class="fas fa-envelope text-red-500 mr-2"></i>
+            <a href="mailto:sthokozilemzotho@gmail.com" class="hover:text-red-500 transition-colors">sthokozilemzotho@gmail.com</a>
+          </p>
+          <p>
+            <i class="fas fa-phone text-blue-500 mr-2"></i>
+            <a href="tel:+2766697925" class="hover:text-blue-500 transition-colors">0766697925</a>
+          </p>
+          <p>
+            <i class="fas fa-map-marker-alt text-gray-500 mr-2"></i>
+            19 Osmabeet Street, Delft South, Cape Town 7100
+          </p>
+        </div>
+      </div>
+      <!-- Contact Form -->
+      <div class="md:w-1/2 bg-white p-6 rounded-lg shadow-md">
+        <form class="space-y-4">
+          <div>
+            <label for="name" class="block text-gray-700 font-medium mb-1">Your Name</label>
+            <input type="text" id="name" placeholder="Your Name" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800">
+          </div>
+          <div>
+            <label for="email" class="block text-gray-700 font-medium mb-1">Your Email</label>
+            <input type="email" id="email" placeholder="Your Email" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800">
+          </div>
+          <div>
+            <label for="message" class="block text-gray-700 font-medium mb-1">Your Message</label>
+            <textarea id="message" placeholder="Your Message" rows="5" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"></textarea>
+          </div>
+          <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors">Send Message</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Include Tailwind CSS and Font Awesome for icons -->
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  
+
+  <footer>
+    <p>© 2025 Sthokozile Mzotho. All rights reserved.</p>
+  </footer>
+
+  <script>
+    const hamburger = document.querySelector('.hamburger');
+    const navLinks = document.querySelector('#nav-links');
+
+    hamburger.addEventListener('click', () => {
+      navLinks.classList.toggle('active');
+    });
+
+    // Smooth scrolling for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+          behavior: 'smooth'
+        });
+        navLinks.classList.remove('active');
+      });
+    });
+  </script>
+</body>
+</html>
